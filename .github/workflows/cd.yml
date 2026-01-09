@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: CD
 
 on:
@@ -24,3 +25,95 @@ jobs:
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             bash deploy.sh
+=======
+name: CD (Deployment)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-24.04
+    # Only run if CI passes (optional but recommended practice)
+    # needs: [backend-tests, frontend-tests] 
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # -------------------------------------------------------------------------
+    # BUILD FRONTEND ASSETS
+    # We build locally in the runner so we don't need Node on the server
+    # -------------------------------------------------------------------------
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Build Production Assets
+      run: npm run build
+
+    # -------------------------------------------------------------------------
+    # DEPLOY TO SERVER
+    # Using Rsync for file transfer and SSH for commands
+    # -------------------------------------------------------------------------
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+
+    - name: Adding Known Hosts
+      run: ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy with Rsync
+      run: |
+        rsync -avz --no-t --delete \
+          --exclude=.git \
+          --exclude=node_modules \
+          --exclude=tests \
+          --exclude=storage \
+          --exclude=.env \
+          ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/sistema-venta/
+
+    - name: Execute Remote Commands
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /var/www/sistema-venta
+          
+          # Maintainance mode
+          php artisan down --refresh=15
+
+          # Install PHP dependencies (Production)
+          composer install --no-dev --optimize-autoloader
+
+          # Fix Permissions
+          sudo chown -R www-data:www-data storage bootstrap/cache
+          sudo chmod -R 775 storage bootstrap/cache
+
+          # Database Migrations
+          php artisan migrate --force
+
+          # Optimize Caches
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan event:cache
+
+          # Link Storage
+          php artisan storage:link
+
+          # Live
+          php artisan up
+          php artisan queue:restart
+>>>>>>> 1a3507b9b2ee45a7509015a5b3a0ef7d98086ebc
