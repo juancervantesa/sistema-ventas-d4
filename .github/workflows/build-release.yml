@@ -139,6 +139,7 @@ jobs:
 
           # Create tar.gz excluding unnecessary files
           tar -czvf "${ARTIFACT_NAME}.tar.gz" \
+            --exclude="${ARTIFACT_NAME}.tar.gz" \
             --exclude='node_modules' \
             --exclude='.git' \
             --exclude='.env' \
