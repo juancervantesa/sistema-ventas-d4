@@ -21,9 +21,15 @@ env:
   NODE_VERSION: "20"
 
 jobs:
+  # Quality gates must pass before building
+  quality-gates:
+    name: Quality Gates
+    uses: ./.github/workflows/quality-gates.yml
+
   build:
     name: Build Application
     runs-on: ubuntu-latest
+    needs: quality-gates
     outputs:
       version: ${{ steps.version.outputs.version }}
       release_name: ${{ steps.version.outputs.release_name }}

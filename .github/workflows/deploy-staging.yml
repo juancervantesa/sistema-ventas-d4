@@ -1,11 +1,11 @@
 name: Deploy to Staging
 
 on:
-  # Trigger after successful build on develop
+  # Trigger after successful build on main
   workflow_run:
     workflows: ["Build & Release"]
     types: [completed]
-    branches: [develop]
+    branches: [main]
 
   # Manual trigger
   workflow_dispatch:
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop')
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
     environment: staging
     steps:
       - name: Checkout Repository
@@ -40,10 +40,10 @@ jobs:
           if [ -n "${{ github.event.inputs.release_tag }}" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
-            # Get latest release from develop
-            RELEASE_TAG=$(gh release list --limit 10 | grep -E 'develop' | head -1 | awk '{print $1}' || echo "")
+            # Get latest release from main
+            RELEASE_TAG=$(gh release list --limit 10 | grep -v 'develop' | head -1 | awk '{print $1}' || echo "")
             if [ -z "$RELEASE_TAG" ]; then
-              echo "No release found for develop branch"
+              echo "No release found for main branch"
               exit 1
             fi
           fi
@@ -146,8 +146,11 @@ jobs:
               PGPASSWORD="$DB_PASSWORD" pg_dump -h "$DB_HOST" -U "$DB_USERNAME" -Fc "$DB_DATABASE" > "shared/database/backups/pre-${TIMESTAMP}.sql" 2>/dev/null || echo "Backup skipped"
             fi
 
-            echo "Running migrations"
+            echo "Clearing Laravel caches"
             cd "${RELEASE_DIR}"
+            php artisan optimize:clear
+
+            echo "Running migrations"
             php artisan migrate --force
 
             echo "Atomic switch"
