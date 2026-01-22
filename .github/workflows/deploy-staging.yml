@@ -35,19 +35,14 @@ jobs:
         env:
           HOST: ${{ secrets.STAGING_HOST }}
           USER: ${{ secrets.STAGING_USER }}
+          KEY: ${{ secrets.STAGING_SSH_KEY }}
+          PORT: ${{ secrets.STAGING_SSH_PORT }}
         run: |
           echo "Checking secret availability..."
-          if [ -z "$HOST" ]; then
-            echo "❌ STAGING_HOST is empty"
-          else
-            echo "✅ STAGING_HOST is set (masked)"
-          fi
-          
-          if [ -z "$USER" ]; then
-            echo "❌ STAGING_USER is empty"
-          else
-            echo "✅ STAGING_USER is set (masked)"
-          fi
+          if [ -z "$HOST" ]; then echo "❌ STAGING_HOST is empty"; else echo "✅ STAGING_HOST is set"; fi
+          if [ -z "$USER" ]; then echo "❌ STAGING_USER is empty"; else echo "✅ STAGING_USER is set"; fi
+          if [ -z "$KEY" ]; then echo "❌ STAGING_SSH_KEY is empty"; else echo "✅ STAGING_SSH_KEY is set"; fi
+          if [ -z "$PORT" ]; then echo "❌ STAGING_SSH_PORT is empty"; else echo "✅ STAGING_SSH_PORT is set"; fi
 
       - name: Checkout Repository
         uses: actions/checkout@v4
