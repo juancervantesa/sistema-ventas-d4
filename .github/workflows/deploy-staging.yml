@@ -71,7 +71,7 @@ jobs:
           echo "Running pre-deploy checks..."
 
           # Check disk space
-          AVAILABLE=$(df -BG $DEPLOY_PATH | awk 'NR==2 {print $4}' | sed 's/G//')
+          AVAILABLE=$(df -BG "$DEPLOY_PATH" | awk 'NR==2 {print $4}' | sed 's/G//')
           if [ "$AVAILABLE" -lt 2 ]; then
             echo "Insufficient disk space: ${AVAILABLE}GB (need 2GB)"
             exit 1
@@ -96,7 +96,7 @@ jobs:
       - name: Deploy Application
         run: |
           set -e
-          cd $DEPLOY_PATH
+          cd "$DEPLOY_PATH"
 
           RELEASE_TAG="${{ steps.release.outputs.release_tag }}"
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
@@ -122,12 +122,7 @@ jobs:
           ln -sfn "$(pwd)/shared/.env" "${RELEASE_DIR}/.env"
 
           echo "Setting permissions (sudo required if different user)"
-          # Nota: como estamos en self-hosted y probablemente con el mismo usuario jota, chown podría no ser necesario o requerir sudo
-          # Intentamos ajustar permisos estándar sin sudo si es posible, o usamos sudo si el usuario tiene NOPASSWD
-          
-          # Si usuario es diferente, descomentar:
-          # sudo chown -R www-data:www-data "${RELEASE_DIR}"
-          
+          # Ajustar permisos
           chmod -R 755 "${RELEASE_DIR}"
           chmod -R 775 shared/storage
 
@@ -148,7 +143,7 @@ jobs:
           php artisan migrate --force
 
           echo "Atomic switch"
-          cd $DEPLOY_PATH
+          cd "$DEPLOY_PATH"
           ln -sfn "$(pwd)/${RELEASE_DIR}" current.new
           mv -Tf current.new current
 
@@ -157,9 +152,6 @@ jobs:
           sudo systemctl reload php8.2-fpm || echo "Warning: Could not reload PHP-FPM"
           sudo nginx -s reload || echo "Warning: Could not reload Nginx"
           
-          # Reiniciar colas
-          # php artisan queue:restart || true
-
           echo "Cleanup"
           rm -rf "/tmp/deploy-${TIMESTAMP}"
 
@@ -200,7 +192,7 @@ jobs:
       - name: Rollback on Failure
         if: failure()
         run: |
-          cd $DEPLOY_PATH
+          cd "$DEPLOY_PATH"
 
           PREVIOUS=$(ls -t releases | sed -n '2p')
           if [ -n "$PREVIOUS" ]; then
