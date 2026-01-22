@@ -140,6 +140,8 @@ jobs:
 
           echo "Clearing Laravel caches"
           cd "${RELEASE_DIR}"
+          # Eliminar cachés generados en el build (github runner paths)
+          rm -f bootstrap/cache/*.php
           php artisan optimize:clear
 
           echo "Running migrations"
