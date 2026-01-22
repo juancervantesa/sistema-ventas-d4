@@ -138,8 +138,8 @@ jobs:
           ARTIFACT_NAME="sistema-ventas-${{ steps.version.outputs.release_name }}"
 
           # Create tar.gz excluding unnecessary files
-          tar -czvf "${ARTIFACT_NAME}.tar.gz" \
-            --exclude="${ARTIFACT_NAME}.tar.gz" \
+          # Usamos /tmp para evitar el error "file changed as we read it"
+          tar -czvf "/tmp/${ARTIFACT_NAME}.tar.gz" \
             --exclude='node_modules' \
             --exclude='.git' \
             --exclude='.env' \
@@ -160,6 +160,9 @@ jobs:
             --exclude='eslint.config.js' \
             --exclude='.claude' \
             .
+
+          # Mover el artefacto al directorio actual
+          mv "/tmp/${ARTIFACT_NAME}.tar.gz" .
 
           # Generate checksum
           sha256sum "${ARTIFACT_NAME}.tar.gz" > "${ARTIFACT_NAME}.tar.gz.sha256"
