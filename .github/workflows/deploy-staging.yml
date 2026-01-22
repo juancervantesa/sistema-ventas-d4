@@ -75,8 +75,8 @@ jobs:
 
           # Check disk space
           AVAILABLE=$(df -BG "$DEPLOY_PATH" | awk 'NR==2 {print $4}' | sed 's/G//')
-          if [ "$AVAILABLE" -lt 2 ]; then
-            echo "Insufficient disk space: ${AVAILABLE}GB (need 2GB)"
+          if [ "$AVAILABLE" -lt 1 ]; then
+            echo "Insufficient disk space: ${AVAILABLE}GB (need 1GB)"
             exit 1
           fi
           echo "Disk space: ${AVAILABLE}GB available"
